@@ -21,6 +21,9 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IIntegrationService, IntegrationService>();
 
+// Correlation ID
+builder.Services.AddCorrelationId();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -44,7 +47,10 @@ if (runMigrations || app.Environment.IsDevelopment())
 
 // Configure the HTTP request pipeline.
 
-// Manejo global de excepciones (debe estar primero)
+// Correlation ID (primero para que esté disponible en todo el pipeline)
+app.UseCorrelationId();
+
+// Manejo global de excepciones
 app.UseExceptionHandling();
 
 if (app.Environment.IsDevelopment())

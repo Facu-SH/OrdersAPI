@@ -6,6 +6,7 @@ using OrderIntegration.Api.Domain.Entities;
 using OrderIntegration.Api.Domain.Enums;
 using OrderIntegration.Api.Infrastructure.Integrations;
 using OrderIntegration.Api.Infrastructure.Persistence;
+using OrderIntegration.Api.Middleware;
 
 namespace OrderIntegration.Api.Application.Services;
 
@@ -18,6 +19,7 @@ public class IntegrationService : IIntegrationService
     private readonly ErpSimulator _erpSimulator;
     private readonly IAuditService _auditService;
     private readonly ILogger<IntegrationService> _logger;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -29,19 +31,24 @@ public class IntegrationService : IIntegrationService
         AppDbContext context,
         ErpSimulator erpSimulator,
         IAuditService auditService,
-        ILogger<IntegrationService> logger)
+        ILogger<IntegrationService> logger,
+        ICorrelationIdAccessor correlationIdAccessor)
     {
         _context = context;
         _erpSimulator = erpSimulator;
         _auditService = auditService;
         _logger = logger;
+        _correlationIdAccessor = correlationIdAccessor;
     }
 
     /// <inheritdoc />
     public async Task<SendToErpResponse?> SendOrderToErpAsync(long orderId, string? correlationId = null)
     {
+        // Usar el correlationId del contexto si no se proporciona uno explícitamente
+        var effectiveCorrelationId = correlationId ?? _correlationIdAccessor.CorrelationId;
+
         _logger.LogInformation("Enviando pedido {OrderId} al ERP. CorrelationId: {CorrelationId}", 
-            orderId, correlationId);
+            orderId, effectiveCorrelationId);
 
         // Obtener el pedido
         var order = await _context.Orders
@@ -83,7 +90,7 @@ public class IntegrationService : IIntegrationService
             RequestPayload = payloadJson,
             Attempts = 1,
             LastAttemptAt = DateTime.UtcNow,
-            CorrelationId = correlationId
+            CorrelationId = effectiveCorrelationId
         };
 
         _context.IntegrationAttempts.Add(attempt);
@@ -104,13 +111,13 @@ public class IntegrationService : IIntegrationService
                 AckedAt = DateTime.UtcNow
             }, JsonOptions);
 
-            // Registrar evento de auditoría
+            // Registrar evento de auditoría (el correlationId se obtiene automáticamente)
             await _auditService.RecordOrderEventAsync(orderId, EventType.ErpAck, new
             {
                 result.ErpReference,
                 result.Message,
                 attempt.Id
-            }, correlationId);
+            });
         }
         else
         {
@@ -123,12 +130,12 @@ public class IntegrationService : IIntegrationService
                 FailedAt = DateTime.UtcNow
             }, JsonOptions);
 
-            // Registrar evento de auditoría
+            // Registrar evento de auditoría (el correlationId se obtiene automáticamente)
             await _auditService.RecordOrderEventAsync(orderId, EventType.ErpFail, new
             {
                 result.Message,
                 attempt.Id
-            }, correlationId);
+            });
         }
 
         await _context.SaveChangesAsync();

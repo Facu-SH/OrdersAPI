@@ -5,6 +5,7 @@ using OrderIntegration.Api.Contracts.Audit;
 using OrderIntegration.Api.Domain.Entities;
 using OrderIntegration.Api.Domain.Enums;
 using OrderIntegration.Api.Infrastructure.Persistence;
+using OrderIntegration.Api.Middleware;
 
 namespace OrderIntegration.Api.Application.Services;
 
@@ -15,6 +16,7 @@ public class AuditService : IAuditService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AuditService> _logger;
+    private readonly ICorrelationIdAccessor _correlationIdAccessor;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,10 +24,14 @@ public class AuditService : IAuditService
         WriteIndented = false
     };
 
-    public AuditService(AppDbContext context, ILogger<AuditService> logger)
+    public AuditService(
+        AppDbContext context,
+        ILogger<AuditService> logger,
+        ICorrelationIdAccessor correlationIdAccessor)
     {
         _context = context;
         _logger = logger;
+        _correlationIdAccessor = correlationIdAccessor;
     }
 
     /// <inheritdoc />
@@ -37,6 +43,9 @@ public class AuditService : IAuditService
         string? userOrClient = null,
         string? correlationId = null)
     {
+        // Usar el correlationId del contexto si no se proporciona uno explícitamente
+        var effectiveCorrelationId = correlationId ?? _correlationIdAccessor.CorrelationId;
+
         var auditEvent = new AuditEvent
         {
             EntityType = entityType,
@@ -45,7 +54,7 @@ public class AuditService : IAuditService
             TimestampUtc = DateTime.UtcNow,
             UserOrClient = userOrClient,
             Data = data != null ? JsonSerializer.Serialize(data, JsonOptions) : null,
-            CorrelationId = correlationId
+            CorrelationId = effectiveCorrelationId
         };
 
         _context.AuditEvents.Add(auditEvent);
