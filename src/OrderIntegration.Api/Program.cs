@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrderIntegration.Api.Application.Interfaces;
 using OrderIntegration.Api.Application.Services;
+using OrderIntegration.Api.Infrastructure.Integrations;
 using OrderIntegration.Api.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,9 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Infrastructure
+builder.Services.AddScoped<ErpSimulator>();
+
 // Application Services
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IIntegrationService, IntegrationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

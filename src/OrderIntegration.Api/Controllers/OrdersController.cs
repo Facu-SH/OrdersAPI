@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OrderIntegration.Api.Application.Interfaces;
 using OrderIntegration.Api.Contracts.Common;
+using OrderIntegration.Api.Contracts.Integration;
 using OrderIntegration.Api.Contracts.Orders;
 
 namespace OrderIntegration.Api.Controllers;
@@ -11,10 +12,12 @@ namespace OrderIntegration.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IIntegrationService _integrationService;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, IIntegrationService integrationService)
     {
         _orderService = orderService;
+        _integrationService = integrationService;
     }
 
     /// <summary>
@@ -106,5 +109,30 @@ public class OrdersController : ControllerBase
         {
             return Conflict(new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Envía un pedido al sistema ERP.
+    /// </summary>
+    /// <param name="id">ID del pedido.</param>
+    /// <param name="correlationId">ID de correlación opcional (header X-Correlation-Id).</param>
+    /// <returns>Resultado del envío.</returns>
+    /// <response code="200">Envío procesado (puede ser exitoso o fallido).</response>
+    /// <response code="404">Pedido no encontrado.</response>
+    [HttpPost("{id:long}/send-to-erp")]
+    [ProducesResponseType(typeof(SendToErpResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SendToErpResponse>> SendToErp(
+        long id, 
+        [FromHeader(Name = "X-Correlation-Id")] string? correlationId = null)
+    {
+        var result = await _integrationService.SendOrderToErpAsync(id, correlationId);
+
+        if (result == null)
+        {
+            return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+        }
+
+        return Ok(result);
     }
 }
