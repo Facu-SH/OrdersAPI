@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using OrderIntegration.Api.Domain.Exceptions;
 
 namespace OrderIntegration.Api.Middleware;
 
@@ -60,12 +61,36 @@ public class ExceptionHandlingMiddleware
 
         return exception switch
         {
+            ConflictException ex => (
+                (int)HttpStatusCode.Conflict,
+                new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.Conflict,
+                    Title = "Conflicto de negocio",
+                    Detail = ex.Message,
+                    Type = "https://httpstatuses.com/409",
+                    Instance = context.Request.Path,
+                    Extensions = { ["traceId"] = traceId }
+                }),
+
+            NotFoundException ex => (
+                (int)HttpStatusCode.NotFound,
+                new ProblemDetails
+                {
+                    Status = (int)HttpStatusCode.NotFound,
+                    Title = "Recurso no encontrado",
+                    Detail = ex.Message,
+                    Type = "https://httpstatuses.com/404",
+                    Instance = context.Request.Path,
+                    Extensions = { ["traceId"] = traceId }
+                }),
+
             InvalidOperationException ex => (
                 (int)HttpStatusCode.Conflict,
                 new ProblemDetails
                 {
                     Status = (int)HttpStatusCode.Conflict,
-                    Title = "Conflicto de operación",
+                    Title = "Operación no válida",
                     Detail = ex.Message,
                     Type = "https://httpstatuses.com/409",
                     Instance = context.Request.Path,

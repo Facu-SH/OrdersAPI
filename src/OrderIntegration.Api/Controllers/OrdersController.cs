@@ -25,7 +25,6 @@ public class OrdersController : ControllerBase
     /// </summary>
     /// <param name="parameters">Parámetros de filtro y paginación.</param>
     /// <returns>Lista paginada de pedidos.</returns>
-    /// <response code="200">Lista de pedidos.</response>
     [HttpGet]
     [ProducesResponseType(typeof(PaginatedResponse<OrderResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PaginatedResponse<OrderResponse>>> GetOrders([FromQuery] OrderQueryParameters parameters)
@@ -44,19 +43,12 @@ public class OrdersController : ControllerBase
     /// <response code="409">Ya existe un pedido con ese número.</response>
     [HttpPost]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> CreateOrder([FromBody] CreateOrderRequest request)
     {
-        try
-        {
-            var order = await _orderService.CreateOrderAsync(request);
-            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        var order = await _orderService.CreateOrderAsync(request);
+        return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
     }
 
     /// <summary>
@@ -66,14 +58,14 @@ public class OrdersController : ControllerBase
     /// <returns>El pedido solicitado.</returns>
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> GetOrder(long id)
     {
         var order = await _orderService.GetOrderByIdAsync(id);
         
         if (order == null)
         {
-            return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
         }
 
         return Ok(order);
@@ -90,25 +82,18 @@ public class OrdersController : ControllerBase
     /// <response code="409">Transición de estado no válida.</response>
     [HttpPost("{id:long}/status")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> UpdateStatus(long id, [FromBody] UpdateStatusRequest request)
     {
-        try
+        var order = await _orderService.UpdateStatusAsync(id, request);
+        
+        if (order == null)
         {
-            var order = await _orderService.UpdateStatusAsync(id, request);
-            
-            if (order == null)
-            {
-                return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
-            }
+            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
+        }
 
-            return Ok(order);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
+        return Ok(order);
     }
 
     /// <summary>
@@ -121,7 +106,7 @@ public class OrdersController : ControllerBase
     /// <response code="404">Pedido no encontrado.</response>
     [HttpPost("{id:long}/send-to-erp")]
     [ProducesResponseType(typeof(SendToErpResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SendToErpResponse>> SendToErp(
         long id, 
         [FromHeader(Name = "X-Correlation-Id")] string? correlationId = null)
@@ -130,7 +115,7 @@ public class OrdersController : ControllerBase
 
         if (result == null)
         {
-            return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
         }
 
         return Ok(result);
