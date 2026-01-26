@@ -23,6 +23,13 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Inicializar base de datos (migraciones + seed en desarrollo)
+var runMigrations = builder.Configuration.GetValue<bool>("ApiSettings:RunMigrations");
+if (runMigrations || app.Environment.IsDevelopment())
+{
+    await DbInitializer.InitializeAsync(app.Services, runMigrations: true);
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
