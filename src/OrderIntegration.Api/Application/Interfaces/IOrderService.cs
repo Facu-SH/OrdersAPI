@@ -17,4 +17,9 @@ public interface IOrderService
     /// Obtiene pedidos con filtros y paginación.
     /// </summary>
     Task<PaginatedResponse<OrderResponse>> GetOrdersAsync(OrderQueryParameters parameters);
+
+    /// <summary>
+    /// Obtiene un pedido por su ID.
+    /// </summary>
+    Task<OrderResponse?> GetOrderByIdAsync(long id);
 }

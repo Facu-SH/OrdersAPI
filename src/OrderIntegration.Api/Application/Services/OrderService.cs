@@ -123,6 +123,24 @@ public class OrderService : IOrderService
         return new PaginatedResponse<OrderResponse>(items, parameters.Page, parameters.PageSize, totalCount);
     }
 
+    /// <inheritdoc />
+    public async Task<OrderResponse?> GetOrderByIdAsync(long id)
+    {
+        _logger.LogInformation("Obteniendo pedido con ID {OrderId}", id);
+
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order == null)
+        {
+            _logger.LogWarning("Pedido con ID {OrderId} no encontrado", id);
+            return null;
+        }
+
+        return MapToResponse(order);
+    }
+
     /// <summary>
     /// Mapea una entidad Order a OrderResponse.
     /// </summary>

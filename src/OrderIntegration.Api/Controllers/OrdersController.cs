@@ -61,13 +61,18 @@ public class OrdersController : ControllerBase
     /// </summary>
     /// <param name="id">ID del pedido.</param>
     /// <returns>El pedido solicitado.</returns>
-    /// <remarks>Este endpoint se implementará en el paso 4d.</remarks>
     [HttpGet("{id:long}")]
     [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> GetOrder(long id)
     {
-        // Placeholder - se implementará en paso 4d
-        return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+        var order = await _orderService.GetOrderByIdAsync(id);
+        
+        if (order == null)
+        {
+            return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+        }
+
+        return Ok(order);
     }
 }
