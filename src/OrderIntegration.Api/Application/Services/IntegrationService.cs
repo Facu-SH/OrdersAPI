@@ -149,4 +149,112 @@ public class IntegrationService : IIntegrationService
             SentAt = attempt.LastAttemptAt
         };
     }
+
+    /// <inheritdoc />
+    public async Task<ErpWebhookResponse> ProcessErpWebhookAsync(ErpWebhookRequest request)
+    {
+        _logger.LogInformation(
+            "Procesando webhook del ERP para pedido {OrderNumber}. Success: {Success}, CorrelationId: {CorrelationId}",
+            request.OrderNumber, request.Success, request.CorrelationId);
+
+        // Buscar el pedido por número
+        var order = await _context.Orders
+            .FirstOrDefaultAsync(o => o.OrderNumber == request.OrderNumber);
+
+        if (order == null)
+        {
+            _logger.LogWarning("Webhook recibido para pedido inexistente: {OrderNumber}", request.OrderNumber);
+            return new ErpWebhookResponse
+            {
+                Processed = false,
+                Message = $"Pedido con número '{request.OrderNumber}' no encontrado.",
+                OrderNumber = request.OrderNumber
+            };
+        }
+
+        // Buscar el último intento de integración pendiente o enviado
+        var attempt = await _context.IntegrationAttempts
+            .Where(i => i.OrderId == order.Id && 
+                        i.TargetSystem == TargetSystem.ERP &&
+                        (i.Status == IntegrationStatus.Sent || i.Status == IntegrationStatus.Pending))
+            .OrderByDescending(i => i.LastAttemptAt)
+            .FirstOrDefaultAsync();
+
+        if (attempt == null)
+        {
+            _logger.LogWarning(
+                "Webhook recibido pero no hay intento de integración pendiente para pedido {OrderNumber}", 
+                request.OrderNumber);
+            return new ErpWebhookResponse
+            {
+                Processed = false,
+                Message = $"No hay intento de integración pendiente para el pedido '{request.OrderNumber}'.",
+                OrderNumber = request.OrderNumber
+            };
+        }
+
+        // Actualizar el intento
+        attempt.LastAttemptAt = DateTime.UtcNow;
+        attempt.CorrelationId = request.CorrelationId ?? attempt.CorrelationId;
+
+        if (request.Success)
+        {
+            attempt.Status = IntegrationStatus.Acked;
+            attempt.ResponsePayload = JsonSerializer.Serialize(new
+            {
+                request.Success,
+                request.Message,
+                request.ErpReference,
+                AckedAt = DateTime.UtcNow,
+                Source = "Webhook"
+            }, JsonOptions);
+
+            await _auditService.RecordOrderEventAsync(order.Id, EventType.ErpAck, new
+            {
+                request.ErpReference,
+                request.Message,
+                attempt.Id,
+                Source = "Webhook"
+            }, request.CorrelationId);
+
+            _logger.LogInformation(
+                "Webhook procesado: Pedido {OrderNumber} confirmado por ERP. Referencia: {ErpReference}",
+                request.OrderNumber, request.ErpReference);
+        }
+        else
+        {
+            attempt.Status = IntegrationStatus.Failed;
+            attempt.ErrorMessage = request.Message;
+            attempt.ResponsePayload = JsonSerializer.Serialize(new
+            {
+                request.Success,
+                request.Message,
+                FailedAt = DateTime.UtcNow,
+                Source = "Webhook"
+            }, JsonOptions);
+
+            await _auditService.RecordOrderEventAsync(order.Id, EventType.ErpFail, new
+            {
+                request.Message,
+                attempt.Id,
+                Source = "Webhook"
+            }, request.CorrelationId);
+
+            _logger.LogWarning(
+                "Webhook procesado: Pedido {OrderNumber} rechazado por ERP. Mensaje: {Message}",
+                request.OrderNumber, request.Message);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return new ErpWebhookResponse
+        {
+            Processed = true,
+            Message = request.Success 
+                ? "Confirmación del ERP procesada correctamente." 
+                : "Rechazo del ERP registrado.",
+            IntegrationAttemptId = attempt.Id,
+            OrderNumber = request.OrderNumber
+        };
+    }
 }

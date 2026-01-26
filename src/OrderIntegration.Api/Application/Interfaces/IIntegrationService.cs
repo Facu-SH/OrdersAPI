@@ -14,4 +14,11 @@ public interface IIntegrationService
     /// <param name="correlationId">ID de correlación opcional.</param>
     /// <returns>Resultado del envío.</returns>
     Task<SendToErpResponse?> SendOrderToErpAsync(long orderId, string? correlationId = null);
+
+    /// <summary>
+    /// Procesa el webhook de confirmación del ERP.
+    /// </summary>
+    /// <param name="request">Datos del webhook.</param>
+    /// <returns>Resultado del procesamiento.</returns>
+    Task<ErpWebhookResponse> ProcessErpWebhookAsync(ErpWebhookRequest request);
 }
