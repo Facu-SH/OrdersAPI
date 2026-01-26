@@ -22,4 +22,11 @@ public interface IOrderService
     /// Obtiene un pedido por su ID.
     /// </summary>
     Task<OrderResponse?> GetOrderByIdAsync(long id);
+
+    /// <summary>
+    /// Actualiza el estado de un pedido.
+    /// </summary>
+    /// <returns>El pedido actualizado o null si no existe.</returns>
+    /// <exception cref="InvalidOperationException">Si la transición no es válida.</exception>
+    Task<OrderResponse?> UpdateStatusAsync(long id, UpdateStatusRequest request);
 }

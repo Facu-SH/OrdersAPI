@@ -75,4 +75,36 @@ public class OrdersController : ControllerBase
 
         return Ok(order);
     }
+
+    /// <summary>
+    /// Actualiza el estado de un pedido.
+    /// </summary>
+    /// <param name="id">ID del pedido.</param>
+    /// <param name="request">Nuevo estado del pedido.</param>
+    /// <returns>El pedido actualizado.</returns>
+    /// <response code="200">Estado actualizado exitosamente.</response>
+    /// <response code="404">Pedido no encontrado.</response>
+    /// <response code="409">Transición de estado no válida.</response>
+    [HttpPost("{id:long}/status")]
+    [ProducesResponseType(typeof(OrderResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<OrderResponse>> UpdateStatus(long id, [FromBody] UpdateStatusRequest request)
+    {
+        try
+        {
+            var order = await _orderService.UpdateStatusAsync(id, request);
+            
+            if (order == null)
+            {
+                return NotFound(new { error = $"Pedido con ID {id} no encontrado." });
+            }
+
+            return Ok(order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
 }

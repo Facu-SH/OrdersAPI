@@ -141,6 +141,41 @@ public class OrderService : IOrderService
         return MapToResponse(order);
     }
 
+    /// <inheritdoc />
+    public async Task<OrderResponse?> UpdateStatusAsync(long id, UpdateStatusRequest request)
+    {
+        _logger.LogInformation("Actualizando estado del pedido {OrderId} a {NewStatus}", id, request.NewStatus);
+
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order == null)
+        {
+            _logger.LogWarning("Pedido con ID {OrderId} no encontrado para actualizar estado", id);
+            return null;
+        }
+
+        // Parsear el nuevo estado
+        if (!Enum.TryParse<OrderStatus>(request.NewStatus, ignoreCase: true, out var newStatus))
+        {
+            throw new InvalidOperationException(
+                $"Estado '{request.NewStatus}' no es válido. Estados válidos: {string.Join(", ", Enum.GetNames<OrderStatus>())}");
+        }
+
+        var previousStatus = order.Status;
+
+        // Cambiar estado (incluye validación de transición)
+        order.ChangeStatus(newStatus);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Pedido {OrderId} cambió de {PreviousStatus} a {NewStatus}", 
+            id, previousStatus, newStatus);
+
+        return MapToResponse(order);
+    }
+
     /// <summary>
     /// Mapea una entidad Order a OrderResponse.
     /// </summary>
