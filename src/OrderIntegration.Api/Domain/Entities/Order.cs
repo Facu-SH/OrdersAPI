@@ -51,4 +51,26 @@ public class Order
     {
         TotalAmount = Items.Sum(item => item.LineTotal);
     }
+
+    /// <summary>
+    /// Cambia el estado del pedido validando la transición.
+    /// </summary>
+    /// <param name="newStatus">Nuevo estado del pedido.</param>
+    /// <exception cref="InvalidOperationException">Si la transición no es válida.</exception>
+    public void ChangeStatus(OrderStatus newStatus)
+    {
+        OrderStatusTransitions.ValidateTransition(Status, newStatus);
+        Status = newStatus;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Verifica si se puede transicionar al estado indicado.
+    /// </summary>
+    /// <param name="newStatus">Estado destino a verificar.</param>
+    /// <returns>True si la transición es válida.</returns>
+    public bool CanTransitionTo(OrderStatus newStatus)
+    {
+        return OrderStatusTransitions.IsValidTransition(Status, newStatus);
+    }
 }
