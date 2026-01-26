@@ -15,11 +15,13 @@ namespace OrderIntegration.Api.Application.Services;
 public class OrderService : IOrderService
 {
     private readonly AppDbContext _context;
+    private readonly IAuditService _auditService;
     private readonly ILogger<OrderService> _logger;
 
-    public OrderService(AppDbContext context, ILogger<OrderService> logger)
+    public OrderService(AppDbContext context, IAuditService auditService, ILogger<OrderService> logger)
     {
         _context = context;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -60,6 +62,15 @@ public class OrderService : IOrderService
 
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
+
+        // Registrar evento de auditoría
+        await _auditService.RecordOrderEventAsync(order.Id, EventType.OrderCreated, new
+        {
+            order.OrderNumber,
+            order.CustomerCode,
+            order.TotalAmount,
+            ItemCount = order.Items.Count
+        });
 
         _logger.LogInformation("Pedido {OrderNumber} creado con ID {OrderId}", 
             order.OrderNumber, order.Id);
@@ -169,6 +180,14 @@ public class OrderService : IOrderService
         order.ChangeStatus(newStatus);
 
         await _context.SaveChangesAsync();
+
+        // Registrar evento de auditoría
+        await _auditService.RecordOrderEventAsync(order.Id, EventType.StatusChanged, new
+        {
+            PreviousStatus = previousStatus.ToString(),
+            NewStatus = newStatus.ToString(),
+            order.OrderNumber
+        });
 
         _logger.LogInformation("Pedido {OrderId} cambió de {PreviousStatus} a {NewStatus}", 
             id, previousStatus, newStatus);

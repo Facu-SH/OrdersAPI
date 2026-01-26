@@ -12,6 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Application Services
+builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddControllers();
