@@ -3,6 +3,7 @@ using OrderIntegration.Api.Application.Interfaces;
 using OrderIntegration.Api.Application.Services;
 using OrderIntegration.Api.Infrastructure.Integrations;
 using OrderIntegration.Api.Infrastructure.Persistence;
+using OrderIntegration.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +43,10 @@ if (runMigrations || app.Environment.IsDevelopment())
 }
 
 // Configure the HTTP request pipeline.
+
+// Manejo global de excepciones (debe estar primero)
+app.UseExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
