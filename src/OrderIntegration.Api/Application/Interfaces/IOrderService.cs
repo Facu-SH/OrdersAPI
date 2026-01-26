@@ -1,3 +1,4 @@
+using OrderIntegration.Api.Contracts.Common;
 using OrderIntegration.Api.Contracts.Orders;
 
 namespace OrderIntegration.Api.Application.Interfaces;
@@ -11,4 +12,9 @@ public interface IOrderService
     /// Crea un nuevo pedido.
     /// </summary>
     Task<OrderResponse> CreateOrderAsync(CreateOrderRequest request);
+
+    /// <summary>
+    /// Obtiene pedidos con filtros y paginación.
+    /// </summary>
+    Task<PaginatedResponse<OrderResponse>> GetOrdersAsync(OrderQueryParameters parameters);
 }

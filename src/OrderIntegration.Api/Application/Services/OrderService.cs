@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrderIntegration.Api.Application.Interfaces;
+using OrderIntegration.Api.Contracts.Common;
 using OrderIntegration.Api.Contracts.Orders;
 using OrderIntegration.Api.Domain;
 using OrderIntegration.Api.Domain.Entities;
@@ -64,6 +65,62 @@ public class OrderService : IOrderService
             order.OrderNumber, order.Id);
 
         return MapToResponse(order);
+    }
+
+    /// <inheritdoc />
+    public async Task<PaginatedResponse<OrderResponse>> GetOrdersAsync(OrderQueryParameters parameters)
+    {
+        _logger.LogInformation("Consultando pedidos con filtros: Status={Status}, Customer={Customer}, Page={Page}", 
+            parameters.Status, parameters.CustomerCode, parameters.Page);
+
+        var query = _context.Orders
+            .Include(o => o.Items)
+            .AsQueryable();
+
+        // Aplicar filtros
+        if (!string.IsNullOrWhiteSpace(parameters.Status))
+        {
+            if (Enum.TryParse<OrderStatus>(parameters.Status, ignoreCase: true, out var status))
+            {
+                query = query.Where(o => o.Status == status);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(parameters.CustomerCode))
+        {
+            query = query.Where(o => o.CustomerCode == parameters.CustomerCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(parameters.OrderNumber))
+        {
+            query = query.Where(o => o.OrderNumber.Contains(parameters.OrderNumber));
+        }
+
+        if (parameters.FromDate.HasValue)
+        {
+            var fromDate = parameters.FromDate.Value.ToUniversalTime();
+            query = query.Where(o => o.CreatedAt >= fromDate);
+        }
+
+        if (parameters.ToDate.HasValue)
+        {
+            var toDate = parameters.ToDate.Value.ToUniversalTime().AddDays(1);
+            query = query.Where(o => o.CreatedAt < toDate);
+        }
+
+        // Contar total
+        var totalCount = await query.CountAsync();
+
+        // Aplicar ordenamiento y paginación
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((parameters.Page - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
+            .ToListAsync();
+
+        var items = orders.Select(MapToResponse).ToList();
+
+        return new PaginatedResponse<OrderResponse>(items, parameters.Page, parameters.PageSize, totalCount);
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OrderIntegration.Api.Application.Interfaces;
+using OrderIntegration.Api.Contracts.Common;
 using OrderIntegration.Api.Contracts.Orders;
 
 namespace OrderIntegration.Api.Controllers;
@@ -14,6 +15,20 @@ public class OrdersController : ControllerBase
     public OrdersController(IOrderService orderService)
     {
         _orderService = orderService;
+    }
+
+    /// <summary>
+    /// Obtiene pedidos con filtros y paginación.
+    /// </summary>
+    /// <param name="parameters">Parámetros de filtro y paginación.</param>
+    /// <returns>Lista paginada de pedidos.</returns>
+    /// <response code="200">Lista de pedidos.</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(PaginatedResponse<OrderResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PaginatedResponse<OrderResponse>>> GetOrders([FromQuery] OrderQueryParameters parameters)
+    {
+        var result = await _orderService.GetOrdersAsync(parameters);
+        return Ok(result);
     }
 
     /// <summary>
