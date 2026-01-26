@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<IntegrationAttempt> IntegrationAttempts => Set<IntegrationAttempt>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
