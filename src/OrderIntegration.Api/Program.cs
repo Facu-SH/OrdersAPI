@@ -90,17 +90,21 @@ try
     // Manejo global de excepciones
     app.UseExceptionHandling();
 
-    if (app.Environment.IsDevelopment())
+    // Swagger habilitado en todos los entornos (para demo público)
+    // En producción real, considerar deshabilitar o proteger
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Order Integration API v1");
-            options.RoutePrefix = string.Empty; // Swagger en la raíz
-        });
-    }
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Order Integration API v1");
+        options.RoutePrefix = string.Empty; // Swagger en la raíz
+        options.DocumentTitle = "Order Integration API";
+    });
 
-    app.UseHttpsRedirection();
+    // Solo redirigir a HTTPS si no estamos en Docker/contenedor
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
 
     // Autenticación por API Key
     app.UseApiKeyAuthentication();
