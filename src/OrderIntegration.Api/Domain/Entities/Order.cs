@@ -49,7 +49,7 @@ public class Order
     /// </summary>
     public void CalculateTotalAmount()
     {
-        TotalAmount = Items.Sum(item => item.LineTotal);
+        TotalAmount = Items?.Sum(item => item.LineTotal) ?? 0;
     }
 
     /// <summary>
