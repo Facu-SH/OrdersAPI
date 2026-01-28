@@ -122,3 +122,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Necesario para WebApplicationFactory en tests
+public partial class Program { }

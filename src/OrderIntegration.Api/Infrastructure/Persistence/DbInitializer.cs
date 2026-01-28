@@ -20,11 +20,18 @@ public static class DbInitializer
 
         try
         {
-            if (runMigrations)
+            // Solo ejecutar migraciones si es una base de datos relacional (no InMemory)
+            var isRelational = context.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory";
+            
+            if (runMigrations && isRelational)
             {
                 logger.LogInformation("Aplicando migraciones de base de datos...");
                 await context.Database.MigrateAsync();
                 logger.LogInformation("Migraciones aplicadas correctamente.");
+            }
+            else if (!isRelational)
+            {
+                logger.LogInformation("Base de datos en memoria detectada. Omitiendo migraciones.");
             }
 
             await SeedDataAsync(context, logger);
