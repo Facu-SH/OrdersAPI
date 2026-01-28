@@ -51,7 +51,9 @@ try
         {
             Title = "Order Integration API",
             Version = "v1",
-            Description = "API REST para gestión de pedidos e integración WMS-ERP"
+            Description = "API REST para gestión de pedidos e integración WMS-ERP.\n\n" +
+                          "**Autenticación:** Incluir header `X-API-KEY` en todas las peticiones a /api/*.\n" +
+                          "Rutas públicas: /health, /swagger"
         });
     });
 
@@ -99,6 +101,10 @@ try
     }
 
     app.UseHttpsRedirection();
+
+    // Autenticación por API Key
+    app.UseApiKeyAuthentication();
+
     app.UseAuthorization();
     app.MapControllers();
 
