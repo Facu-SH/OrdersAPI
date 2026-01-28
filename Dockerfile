@@ -21,8 +21,10 @@ RUN dotnet publish "OrderIntegration.Api.csproj" -c Release -o /app/publish /p:U
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Crear usuario no-root para seguridad
-RUN adduser --disabled-password --gecos '' appuser
+# Instalar wget para healthcheck y crear usuario no-root
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser --disabled-password --gecos '' appuser
 
 # Copiar artifacts de build
 COPY --from=build /app/publish .
