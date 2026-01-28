@@ -43,7 +43,8 @@ try
         throw new InvalidOperationException(
             "No se encontró connection string. Configure 'ConnectionStrings__DefaultConnection' o asegúrese de que DATABASE_URL está definida (Railway: vincule el servicio Postgres).");
     }
-    connectionString = connectionString.Trim();
+    connectionString = ConvertPostgresUrlToConnectionString(connectionString.Trim());
+    Log.Information("Connection string configurada correctamente");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -137,6 +138,43 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Convierte una URL de PostgreSQL (formato URI) a connection string de Npgsql.
+/// Railway/Heroku usan el formato URI: postgresql://user:pass@host:port/database
+/// Npgsql espera: Host=...;Port=...;Database=...;Username=...;Password=...
+/// </summary>
+static string ConvertPostgresUrlToConnectionString(string url)
+{
+    // Si ya está en formato connection string (contiene "Host=" o ";"), devolverlo tal cual
+    if (url.Contains("Host=", StringComparison.OrdinalIgnoreCase) || 
+        url.Contains(";"))
+    {
+        return url;
+    }
+
+    // Intentar parsear como URI
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+    {
+        // No es URI válida, devolver tal cual y dejar que Npgsql dé el error específico
+        return url;
+    }
+
+    // Verificar que es postgres/postgresql
+    if (uri.Scheme != "postgres" && uri.Scheme != "postgresql")
+    {
+        return url;
+    }
+
+    var userInfo = uri.UserInfo.Split(':');
+    var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "postgres";
+    var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+    var host = uri.Host;
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    var database = uri.AbsolutePath.TrimStart('/');
+
+    return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
 }
 
 // Necesario para WebApplicationFactory en tests
