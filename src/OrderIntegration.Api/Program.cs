@@ -35,9 +35,18 @@ try
 
     // Add services to the container.
 
-    // Database
+    // Database: Connection string desde config o DATABASE_URL (Railway inyecta esta variable al vincular Postgres)
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "No se encontró connection string. Configure 'ConnectionStrings__DefaultConnection' o asegúrese de que DATABASE_URL está definida (Railway: vincule el servicio Postgres).");
+    }
+    connectionString = connectionString.Trim();
+
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        options.UseNpgsql(connectionString));
 
     // Infrastructure
     builder.Services.AddScoped<ErpSimulator>();
