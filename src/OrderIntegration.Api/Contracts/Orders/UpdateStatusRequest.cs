@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using OrderIntegration.Api.Contracts.Validation;
 
 namespace OrderIntegration.Api.Contracts.Orders;
 
@@ -12,5 +13,6 @@ public class UpdateStatusRequest
     /// Valores válidos: Created, Prepared, Dispatched, Delivered, Cancelled
     /// </summary>
     [Required(ErrorMessage = "El nuevo estado es requerido.")]
+    [ValidOrderStatus]
     public string NewStatus { get; set; } = default!;
 }

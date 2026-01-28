@@ -5,6 +5,7 @@ using OrderIntegration.Api.Contracts.Orders;
 using OrderIntegration.Api.Domain;
 using OrderIntegration.Api.Domain.Entities;
 using OrderIntegration.Api.Domain.Enums;
+using OrderIntegration.Api.Domain.Exceptions;
 using OrderIntegration.Api.Infrastructure.Persistence;
 
 namespace OrderIntegration.Api.Application.Services;
@@ -37,7 +38,7 @@ public class OrderService : IOrderService
 
         if (exists)
         {
-            throw new InvalidOperationException($"Ya existe un pedido con el número '{request.OrderNumber}'.");
+            throw new ConflictException($"Ya existe un pedido con el número '{request.OrderNumber}'.");
         }
 
         // Crear la entidad
