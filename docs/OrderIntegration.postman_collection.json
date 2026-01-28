@@ -1,0 +1,373 @@
+{
+  "info": {
+    "name": "Order Integration API",
+    "description": "API REST para gestión de pedidos e integración WMS-ERP",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "apiKey",
+      "value": "dev-api-key-12345",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-KEY",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica el estado de la API y la conexión a la base de datos."
+          }
+        },
+        {
+          "name": "Health Check Detailed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/detailed",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "detailed"]
+            },
+            "description": "Health check con información detallada del sistema."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderNumber\": \"ORD-2026-0100\",\n  \"customerCode\": \"CUST-001\",\n  \"items\": [\n    {\n      \"sku\": \"SKU-LAPTOP-001\",\n      \"description\": \"Laptop HP 15.6\",\n      \"quantity\": 2,\n      \"unitPrice\": 899.99\n    },\n    {\n      \"sku\": \"SKU-MOUSE-001\",\n      \"description\": \"Mouse inalámbrico\",\n      \"quantity\": 2,\n      \"unitPrice\": 29.99\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Crea un nuevo pedido con sus ítems."
+          }
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "Created",
+                  "disabled": true
+                },
+                {
+                  "key": "customerCode",
+                  "value": "CUST-001",
+                  "disabled": true
+                },
+                {
+                  "key": "orderNumber",
+                  "value": "ORD-2026",
+                  "disabled": true
+                },
+                {
+                  "key": "fromDate",
+                  "value": "2026-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "toDate",
+                  "value": "2026-12-31",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista pedidos con filtros opcionales y paginación."
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1"]
+            },
+            "description": "Obtiene un pedido por su ID."
+          }
+        },
+        {
+          "name": "Change Status - To Prepared",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"Prepared\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "status"]
+            },
+            "description": "Cambia el estado del pedido a Prepared."
+          }
+        },
+        {
+          "name": "Change Status - To Dispatched",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"Dispatched\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "status"]
+            },
+            "description": "Cambia el estado del pedido a Dispatched."
+          }
+        },
+        {
+          "name": "Change Status - To Delivered",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"Delivered\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "status"]
+            },
+            "description": "Cambia el estado del pedido a Delivered (estado final)."
+          }
+        },
+        {
+          "name": "Change Status - To Cancelled",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"Cancelled\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "status"]
+            },
+            "description": "Cancela el pedido (solo si no está Delivered)."
+          }
+        },
+        {
+          "name": "Send to ERP",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/1/send-to-erp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders", "1", "send-to-erp"]
+            },
+            "description": "Envía el pedido al ERP (simulado). El resultado depende de la configuración del simulador."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "ERP Order ACK - Success",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderNumber\": \"ORD-2026-0001\",\n  \"success\": true,\n  \"message\": \"Pedido procesado correctamente en ERP\",\n  \"correlationId\": \"abc123def456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/erp/order-ack",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "erp", "order-ack"]
+            },
+            "description": "Simula la respuesta de ACK exitoso del ERP."
+          }
+        },
+        {
+          "name": "ERP Order ACK - Failure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderNumber\": \"ORD-2026-0001\",\n  \"success\": false,\n  \"message\": \"Error: SKU no encontrado en catálogo ERP\",\n  \"correlationId\": \"abc123def456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/erp/order-ack",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "erp", "order-ack"]
+            },
+            "description": "Simula la respuesta de fallo del ERP."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Get Audit Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "audit"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "entityType",
+                  "value": "Order",
+                  "disabled": true
+                },
+                {
+                  "key": "entityId",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "eventType",
+                  "value": "StatusChanged",
+                  "disabled": true
+                },
+                {
+                  "key": "correlationId",
+                  "value": "abc123",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Consulta eventos de auditoría con filtros opcionales."
+          }
+        },
+        {
+          "name": "Get Recent Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit/recent?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "audit", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Obtiene los eventos de auditoría más recientes."
+          }
+        }
+      ]
+    }
+  ]
+}
