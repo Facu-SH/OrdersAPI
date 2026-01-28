@@ -84,6 +84,45 @@ curl -X POST https://tu-app.railway.app/api/orders \
   -d '{"orderNumber":"TEST-001","customerCode":"CUST-001","items":[{"sku":"SKU-001","quantity":1,"unitPrice":10}]}'
 ```
 
+### Railway: 502 Bad Gateway y base de datos sin tablas
+
+**502 Bad Gateway**  
+Railway asigna un puerto dinámico (`PORT`). La API ya está preparada para usarlo: en el arranque lee `PORT` y escucha en ese puerto. Si ya desplegaste antes del cambio, haz un **nuevo deploy** (push al repo o “Redeploy” en Railway) para que tome el código actualizado.
+
+**Base de datos sin tablas**  
+Las tablas se crean con las **migraciones de EF Core** al arrancar. Para que se ejecuten necesitas:
+
+1. **Connection string correcta**  
+   En el servicio de la **API** (no en Postgres), en Variables:
+   - Nombre: `ConnectionStrings__DefaultConnection`
+   - Valor: la URL de tu base PostgreSQL.
+
+   Cómo obtenerla:
+   - Entra al servicio **PostgreSQL** en tu proyecto.
+   - Pestaña **Variables** o **Connect**.
+   - Copia **DATABASE_URL** o **Postgres Connection URL** (empieza con `postgresql://`).
+
+   Pega ese valor en `ConnectionStrings__DefaultConnection` del servicio de la API.
+
+2. **Migraciones habilitadas**  
+   En el servicio de la **API**, agrega:
+   - Nombre: `ApiSettings__RunMigrations`
+   - Valor: `true`
+
+3. **Reiniciar / redesplegar**  
+   Guarda las variables y haz **Redeploy** del servicio API. En el primer arranque se ejecutarán las migraciones y se crearán las tablas.
+
+**Resumen de variables en el servicio API (Railway)**
+
+| Variable | Valor | Obligatorio |
+|----------|--------|-------------|
+| `ConnectionStrings__DefaultConnection` | URL de Postgres (del servicio Postgres) | ✅ |
+| `ApiSettings__RunMigrations` | `true` | ✅ (para crear tablas) |
+| `ApiSettings__ApiKey` | Tu API Key (ej. `tu-palabra-secreta`) | ✅ |
+| `ASPNETCORE_ENVIRONMENT` | `Production` | Opcional |
+
+No hace falta definir `PORT` ni `ASPNETCORE_URLS`; Railway inyecta `PORT` y la API lo usa automáticamente.
+
 ---
 
 ## Render
