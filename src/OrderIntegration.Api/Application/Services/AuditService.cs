@@ -114,6 +114,9 @@ public class AuditService : IAuditService
     /// <inheritdoc />
     public async Task<List<AuditEventResponse>> GetRecentEventsAsync(int limit = 100)
     {
+        // Validar límite
+        limit = Math.Clamp(limit, 1, 500);
+
         var events = await _context.AuditEvents
             .OrderByDescending(e => e.TimestampUtc)
             .Take(limit)

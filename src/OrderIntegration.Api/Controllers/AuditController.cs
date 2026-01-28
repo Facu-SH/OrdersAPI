@@ -40,9 +40,7 @@ public class AuditController : ControllerBase
     [ProducesResponseType(typeof(List<AuditEventResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<AuditEventResponse>>> GetRecentEvents([FromQuery] int limit = 100)
     {
-        if (limit > 500) limit = 500;
-        if (limit < 1) limit = 1;
-
+        // El servicio maneja la validación del límite
         var events = await _auditService.GetRecentEventsAsync(limit);
         return Ok(events);
     }

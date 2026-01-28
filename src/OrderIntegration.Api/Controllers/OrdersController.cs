@@ -3,6 +3,7 @@ using OrderIntegration.Api.Application.Interfaces;
 using OrderIntegration.Api.Contracts.Common;
 using OrderIntegration.Api.Contracts.Integration;
 using OrderIntegration.Api.Contracts.Orders;
+using OrderIntegration.Api.Domain.Exceptions;
 
 namespace OrderIntegration.Api.Controllers;
 
@@ -61,12 +62,8 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> GetOrder(long id)
     {
-        var order = await _orderService.GetOrderByIdAsync(id);
-        
-        if (order == null)
-        {
-            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
-        }
+        var order = await _orderService.GetOrderByIdAsync(id)
+            ?? throw new NotFoundException("Pedido", id);
 
         return Ok(order);
     }
@@ -86,12 +83,8 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> UpdateStatus(long id, [FromBody] UpdateStatusRequest request)
     {
-        var order = await _orderService.UpdateStatusAsync(id, request);
-        
-        if (order == null)
-        {
-            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
-        }
+        var order = await _orderService.UpdateStatusAsync(id, request)
+            ?? throw new NotFoundException("Pedido", id);
 
         return Ok(order);
     }
@@ -111,12 +104,8 @@ public class OrdersController : ControllerBase
         long id, 
         [FromHeader(Name = "X-Correlation-Id")] string? correlationId = null)
     {
-        var result = await _integrationService.SendOrderToErpAsync(id, correlationId);
-
-        if (result == null)
-        {
-            throw new KeyNotFoundException($"Pedido con ID {id} no encontrado.");
-        }
+        var result = await _integrationService.SendOrderToErpAsync(id, correlationId)
+            ?? throw new NotFoundException("Pedido", id);
 
         return Ok(result);
     }
