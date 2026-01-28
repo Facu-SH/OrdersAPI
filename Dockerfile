@@ -30,10 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget \
 COPY --from=build /app/publish .
 
 # Configurar variables de entorno por defecto
-ENV ASPNETCORE_URLS=http://+:8080
+# NO definir ASPNETCORE_URLS aquí - el código usa PORT (Railway/Heroku)
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-# Exponer puerto
+# Puerto por defecto (Railway lo sobreescribe con PORT)
 EXPOSE 8080
 
 # Cambiar a usuario no-root

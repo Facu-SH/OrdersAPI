@@ -23,12 +23,11 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Railway / Heroku: escuchar en el puerto que asigna la plataforma (evita 502 Bad Gateway)
-    var port = Environment.GetEnvironmentVariable("PORT");
-    if (!string.IsNullOrEmpty(port) && int.TryParse(port, out var portNum))
-    {
-        builder.WebHost.UseUrls($"http://+:{portNum}");
-    }
+    // Railway / Heroku: escuchar en el puerto que asigna la plataforma
+    // Si no hay PORT definido, usar 8080 como fallback
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    builder.WebHost.UseUrls($"http://+:{port}");
+    Log.Information("Configurado para escuchar en puerto {Port}", port);
 
     // Usar Serilog como proveedor de logging
     builder.Host.UseSerilog();
