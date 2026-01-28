@@ -1,0 +1,40 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# Test results
+**/TestResults/
+**/coverage/
+
+# Local settings
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
